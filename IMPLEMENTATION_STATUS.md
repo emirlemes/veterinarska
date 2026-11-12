@@ -89,6 +89,7 @@ Ovo su zahtjevi iz specifikacije, a ne potvrda da su navedene funkcionalnosti ve
 - Paketi su instalirani iz lokalnog npm cachea; mrežni npm registar je i dalje nedostupan.
 - Prisma migracije su primijenjene na Supabase; lokalni Docker Compose/PostgreSQL servis nije pokrenut ni testiran.
 - Testovi ne pokrivaju još CRUD integraciju ni kompletan poslovni tok.
+- TanStack Query migracija obuhvata liste klijenata i životinja, njihove izmjene i finansijski izvještaj. Ostali prikazi i mutacije i dalje koriste postojeće serverske upite i `fetch`; sveobuhvatna migracija nije završena niti je testirana na prijavljenoj sesiji.
 - Sedmični/mjesečni kalendar, pretraga dnevnog rasporeda i uređivanje zakazanih/potvrđenih termina su implementirani. Testiranje termina nad povezanom bazom nije obavljeno. PWA je instalabilan i radi online; offline unos medicinskih podataka nije uključen.
 - Nisu još napravljeni integracijski testovi koji provjeravaju transakcije životinje i vlasničke historije nad stvarnom bazom.
 

@@ -1,9 +1,64 @@
-import { Prisma } from "@prisma/client";
+import { AnimalStatus, Prisma } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { animalInputSchema } from "@/features/animals/validation";
+import { animalInputSchema, animalListQuerySchema } from "@/features/animals/validation";
 import { authorizeApiRequest } from "@/lib/auth/authorize-api-request";
 import { hasPermission } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/db";
+
+export async function GET(request: NextRequest) {
+  const authorization = await authorizeApiRequest("animals:read");
+  if (authorization.response) return authorization.response;
+
+  const parsed = animalListQuerySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams));
+  if (!parsed.success) {
+    return Response.json({ error: "Neispravan upit za pretragu ili stranicu." }, { status: 400 });
+  }
+  const filters = parsed.data;
+  const statusFilter: Record<"active" | "inactive" | "deceased", AnimalStatus> = {
+    active: AnimalStatus.ACTIVE,
+    inactive: AnimalStatus.INACTIVE,
+    deceased: AnimalStatus.DECEASED,
+  };
+  const where: Prisma.AnimalWhereInput = {};
+  if (filters.status !== "all") where.status = statusFilter[filters.status];
+  if (filters.species) where.species = { contains: filters.species, mode: "insensitive" };
+  if (filters.ownerId) where.ownerId = filters.ownerId;
+  if (filters.q) {
+    where.OR = [
+      { name: { contains: filters.q, mode: "insensitive" } },
+      { species: { contains: filters.q, mode: "insensitive" } },
+      { breed: { contains: filters.q, mode: "insensitive" } },
+      { microchipNumber: { contains: filters.q, mode: "insensitive" } },
+      { passportNumber: { contains: filters.q, mode: "insensitive" } },
+      {
+        owner: {
+          OR: [
+            { firstName: { contains: filters.q, mode: "insensitive" } },
+            { lastName: { contains: filters.q, mode: "insensitive" } },
+            { companyName: { contains: filters.q, mode: "insensitive" } },
+            { phone: { contains: filters.q } },
+          ],
+        },
+      },
+    ];
+  }
+  const total = await prisma.animal.count({ where });
+  const pageCount = Math.max(1, Math.ceil(total / 20));
+  const page = Math.min(filters.page, pageCount);
+  const animals = await prisma.animal.findMany({
+    where,
+    select: {
+      id: true, name: true, species: true, breed: true, sex: true, microchipNumber: true, status: true,
+      owner: { select: { id: true, firstName: true, lastName: true, companyName: true, phone: true } },
+    },
+    orderBy: [{ name: "asc" }, { id: "asc" }],
+    skip: (page - 1) * 20,
+    take: 20,
+  });
+  return Response.json({ animals, total, page, pageCount }, {
+    headers: { "Cache-Control": "private, no-store" },
+  });
+}
 
 function isPrismaError(error: unknown, code: string) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === code;

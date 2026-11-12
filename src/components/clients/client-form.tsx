@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { FormEvent } from "react";
+import { clientKeys, writeClient } from "@/features/clients/queries";
+import { animalKeys } from "@/features/animals/queries";
 
 type ClientFormValues = {
   id?: string;
@@ -16,70 +19,45 @@ type ClientFormValues = {
   notes?: string | null;
 };
 
-function getErrorMessage(value: unknown) {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "error" in value &&
-    typeof value.error === "string"
-  ) {
-    return value.error;
-  }
-  return "Zahtjev nije uspio. Provjerite podatke i pokušajte ponovo.";
-}
-
 export function ClientForm({ client }: { client?: ClientFormValues }) {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (body: object) => writeClient(
+      client?.id ? `/api/clients/${client.id}` : "/api/clients",
+      client?.id ? "PUT" : "POST",
+      body,
+    ),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: clientKeys.all }),
+        queryClient.invalidateQueries({ queryKey: animalKeys.all }),
+      ]);
+    },
+  });
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    setIsSubmitting(true);
-
     const formData = new FormData(event.currentTarget);
     const body = Object.fromEntries(formData.entries());
-    const url = client?.id ? `/api/clients/${client.id}` : "/api/clients";
-
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: client?.id ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-    } catch {
-      setError("Nije moguće povezati se sa serverom. Pokušajte ponovo.");
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      const result: unknown = await response.json();
-
-      if (!response.ok) {
-        setError(getErrorMessage(result));
-        return;
-      }
-
-      if (
-        client?.id &&
-        typeof result === "object" &&
-        result !== null &&
-        "id" in result &&
-        typeof result.id === "string"
-      ) {
-        router.push(`/clients/${result.id}`);
-      } else if (client?.id) {
-        router.push(`/clients/${client.id}`);
-      } else {
-        router.push("/clients");
-      }
-      router.refresh();
-    } finally {
-      setIsSubmitting(false);
-    }
+    mutation.mutate(body, {
+      onSuccess: (result) => {
+        if (
+          client?.id &&
+          typeof result === "object" &&
+          result !== null &&
+          "id" in result &&
+          typeof result.id === "string"
+        ) {
+          router.push(`/clients/${result.id}`);
+        } else if (client?.id) {
+          router.push(`/clients/${client.id}`);
+        } else {
+          router.push("/clients");
+        }
+        router.refresh();
+      },
+    });
   }
 
   return (
@@ -98,10 +76,10 @@ export function ClientForm({ client }: { client?: ClientFormValues }) {
           <textarea className="w-full resize-y rounded-[7px] border border-[#dce4de] px-3 py-2.5 outline-none focus:border-green focus:ring-[3px] focus:ring-[rgb(46_118_88_/_12%)]" name="notes" rows={4} maxLength={5000} defaultValue={client?.notes ?? ""} />
         </label>
       </div>
-      {error ? <p className="rounded-[7px] bg-[#fbefee] px-3 py-2.5 text-xs text-[#a43e3c]" role="alert">{error}</p> : null}
+      {mutation.error ? <p className="rounded-[7px] bg-[#fbefee] px-3 py-2.5 text-xs text-[#a43e3c]" role="alert">{mutation.error.message}</p> : null}
       <div className="mt-3 flex items-center justify-end gap-[9px] border-t border-line pt-[17px]">
-        <button className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-[7px] border border-transparent bg-green px-[13px] text-sm font-bold text-white hover:bg-green-dark disabled:cursor-wait disabled:opacity-[0.65] sm:w-auto" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Čuvanje..." : client?.id ? "Sačuvaj izmjene" : "Kreiraj klijenta"}
+        <button className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-[7px] border border-transparent bg-green px-[13px] text-sm font-bold text-white hover:bg-green-dark disabled:cursor-wait disabled:opacity-[0.65] sm:w-auto" type="submit" disabled={mutation.isPending}>
+          {mutation.isPending ? "Čuvanje..." : client?.id ? "Sačuvaj izmjene" : "Kreiraj klijenta"}
         </button>
       </div>
     </form>

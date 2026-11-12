@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { QueryProvider } from "@/components/query-provider";
 import { getPageSession } from "@/lib/auth/page-session";
 
 export async function ProtectedLayout({
@@ -15,8 +16,10 @@ export async function ProtectedLayout({
   const name = session.user.name?.trim() || session.user.email || "Korisnik";
 
   return (
-    <DashboardShell name={name} role={session.user.role} activeSection={section}>
-      {children}
-    </DashboardShell>
+    <QueryProvider key={`${session.user.id}:${session.user.role}`}>
+      <DashboardShell name={name} role={session.user.role} activeSection={section}>
+        {children}
+      </DashboardShell>
+    </QueryProvider>
   );
 }

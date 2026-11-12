@@ -9,6 +9,7 @@ Web aplikacija za svakodnevni rad veterinarske ambulante. Korisnički interfejs 
 - Auth.js Credentials autentifikacija i kontrola pristupa po ulogama
 - PostgreSQL i Prisma ORM
 - Zod validacija i bcrypt hashiranje lozinki
+- TanStack Query za liste klijenata i životinja te finansijski izvještaj; ostali prikazi još koriste postojeće server-rendered upite i `fetch` mutacije.
 
 ## Trenutni status
 
@@ -18,6 +19,15 @@ Implementirani moduli i otvoreni zahtjevi opisani su u [IMPLEMENTATION_STATUS.md
 - **Veterinar** — pristup svim operativnim funkcijama ambulante; ne može upravljati korisničkim nalozima ni sistemskim postavkama.
 
 Prisma migracije su primijenjene na trenutno konfigurisanu Supabase bazu. Migracija uloga zadržava postojeće Admin naloge kao Admin, a stare ne-Admin uloge pretvara u Veterinar.
+
+Liste klijenata i životinja te finansijski izvještaj koriste memorijski TanStack
+Query cache i autorizovane GET API-je. Izmjene klijenata i životinja ciljano
+invalidiraju povezane registre; detaljni profili se i dalje osvježavaju sa
+servera. Podaci se ne pohranjuju na disk, a odjava čisti trenutni cache.
+Osvježavanje, prekid veze i eventualno zastarjeli podaci označeni su u
+interfejsu. Mutacije se ne spremaju za kasnije izvršavanje bez interneta.
+Finansijski CSV ostaje zaseban server-side izvoz. Migracija ostalih prikaza i
+mutacija na TanStack Query još nije završena.
 
 ## Instalacija na mobitel
 

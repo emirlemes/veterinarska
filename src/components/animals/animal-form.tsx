@@ -1,7 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { FormEvent } from "react";
+import { animalKeys, writeAnimal } from "@/features/animals/queries";
+import { clientKeys } from "@/features/clients/queries";
 
 type OwnerOption = {
   id: string;
@@ -30,18 +33,6 @@ type AnimalFormValues = {
   status?: "ACTIVE" | "DECEASED" | "INACTIVE";
 };
 
-function getErrorMessage(value: unknown) {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "error" in value &&
-    typeof value.error === "string"
-  ) {
-    return value.error;
-  }
-  return "Zahtjev nije uspio. Provjerite podatke i pokušajte ponovo.";
-}
-
 export function AnimalForm({
   animal,
   owners,
@@ -52,51 +43,42 @@ export function AnimalForm({
   canWriteMedical: boolean;
 }) {
   const router = useRouter();
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: (body: object) => writeAnimal(
+      animal?.id ? `/api/animals/${animal.id}` : "/api/animals",
+      animal?.id ? "PUT" : "POST",
+      body,
+    ),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: animalKeys.all }),
+        queryClient.invalidateQueries({ queryKey: clientKeys.all }),
+      ]);
+    },
+  });
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError("");
-    setIsSubmitting(true);
-
     const formData = new FormData(event.currentTarget);
     const body = Object.fromEntries(formData.entries());
-
-    try {
-      const response = await fetch(
-        animal?.id ? `/api/animals/${animal.id}` : "/api/animals",
-        {
-          method: animal?.id ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
-      const result: unknown = await response.json();
-
-      if (!response.ok) {
-        setError(getErrorMessage(result));
-        return;
-      }
-
-      if (animal?.id) {
-        router.push(`/animals/${animal.id}`);
-      } else if (
-        typeof result === "object" &&
-        result !== null &&
-        "id" in result &&
-        typeof result.id === "string"
-      ) {
-        router.push(`/animals/${result.id}`);
-      } else {
-        router.push("/animals");
-      }
-      router.refresh();
-    } catch {
-      setError("Nije moguće povezati se sa serverom. Pokušajte ponovo.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    mutation.mutate(body, {
+      onSuccess: (result) => {
+        if (animal?.id) {
+          router.push(`/animals/${animal.id}`);
+        } else if (
+          typeof result === "object" &&
+          result !== null &&
+          "id" in result &&
+          typeof result.id === "string"
+        ) {
+          router.push(`/animals/${result.id}`);
+        } else {
+          router.push("/animals");
+        }
+        router.refresh();
+      },
+    });
   }
 
   return (
@@ -160,10 +142,10 @@ export function AnimalForm({
           </>
         ) : null}
       </div>
-      {error ? <p className="rounded-[7px] bg-[#fbefee] px-3 py-2.5 text-xs text-[#a43e3c]" role="alert">{error}</p> : null}
+      {mutation.error ? <p className="rounded-[7px] bg-[#fbefee] px-3 py-2.5 text-xs text-[#a43e3c]" role="alert">{mutation.error.message}</p> : null}
       <div className="mt-3 flex items-center justify-end gap-[9px] border-t border-line pt-[17px]">
-        <button className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-[7px] border border-transparent bg-green px-[13px] text-sm font-bold text-white hover:bg-green-dark disabled:cursor-wait disabled:opacity-[0.65] sm:w-auto" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Čuvanje..." : animal?.id ? "Sačuvaj izmjene" : "Kreiraj životinju"}
+        <button className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-[7px] border border-transparent bg-green px-[13px] text-sm font-bold text-white hover:bg-green-dark disabled:cursor-wait disabled:opacity-[0.65] sm:w-auto" type="submit" disabled={mutation.isPending}>
+          {mutation.isPending ? "Čuvanje..." : animal?.id ? "Sačuvaj izmjene" : "Kreiraj životinju"}
         </button>
       </div>
     </form>
