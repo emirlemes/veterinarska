@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { getPageSession } from "@/lib/auth/page-session";
 
 export async function ProtectedLayout({
   children,
@@ -9,7 +9,7 @@ export async function ProtectedLayout({
   children: React.ReactNode;
   section: "dashboard" | "clients" | "animals" | "appointments" | "examinations" | "inventory" | "invoices" | "reports" | "inventory-report" | "services" | "employees" | "settings";
 }>) {
-  const session = await auth();
+  const session = await getPageSession();
   if (!session?.user) redirect("/login");
 
   const name = session.user.name?.trim() || session.user.email || "Korisnik";

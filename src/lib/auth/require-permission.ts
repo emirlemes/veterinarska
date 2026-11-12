@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getPageSession } from "./page-session";
 import type { Permission } from "./permissions";
 import { hasPermission } from "./permissions";
 
 export async function requirePermission(permission: Permission) {
-  const session = await auth();
+  const session = await getPageSession();
 
   if (!session?.user) redirect("/login");
   if (!hasPermission(session.user.role, permission)) {

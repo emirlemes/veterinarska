@@ -117,6 +117,7 @@ Pregledi i ostali podaci rade uz internet vezu. Servisni worker ne kešira prija
 | `AUTH_SECRET` | Tajna koju Auth.js koristi za sesije |
 | `AUTH_TRUST_HOST` | Uključiti povjerenje u lokalni host; primjer je podešen na `true` |
 | `NEXT_PUBLIC_ERROR_LOGGING` | Postaviti na `true` za dodatne dijagnostičke ispise grešaka; zadano je isključeno |
+| `PERFORMANCE_LOGGING` | Postaviti na `true` za trajanje Prisma upita u serverskim logovima; zadano je isključeno |
 | `ADMIN_EMAIL` | E-mail početnog administratorskog računa |
 | `ADMIN_PASSWORD` | Lozinka početnog administratora (najmanje 12 znakova) |
 
@@ -140,6 +141,41 @@ Server logovi nisu automatski vidljivi testeru u pregledniku.
 Poruke i stack traceovi mogu sadržavati osjetljive podatke. Koristi ovu opciju
 samo u zaštićenom testnom okruženju s testnim podacima i ne dijeli logove bez
 provjere njihovog sadržaja.
+
+### Mjerenje brzine
+
+Nakon deploya otvori DevTools Console u istoj kartici aplikacije i uključi
+ispise za tu karticu, zatim osvježi stranicu:
+
+```js
+sessionStorage.setItem("vetcare:performance-logging", "true");
+location.reload();
+```
+
+Ispisi `[VetCare performance]` sadrže trajanje početnog učitavanja i mrežnih
+RSC zahtjeva u milisekundama. `firstByteMs` je vrijeme od početka zahtjeva do
+prvog bajta (uključuje mrežu i čekanje servera), a `totalMs` uključuje i
+preuzimanje odgovora. RSC zahtjevi mogu biti unaprijed učitani prije klika;
+nisu mjera vremena do prikaza stranice i neće se pojaviti za navigaciju koja
+koristi već učitani sadržaj. Ispis prikazuje samo naziv modula, bez punog URL-a,
+parametara, identifikatora ili sadržaja odgovora. Isključi ga u istoj kartici:
+
+```js
+sessionStorage.removeItem("vetcare:performance-logging");
+location.reload();
+```
+
+Za dodatnu provjeru baze privremeno postavi `PERFORMANCE_LOGGING=true` u Vercel
+environment varijablama i napravi novi deployment. Vercel runtime logovi će
+prikazati trajanje pojedinačnih Prisma upita, bez SQL-a i parametara. Upiti se
+mogu izvršavati paralelno i logovi se mogu preplitati između zahtjeva, pa ih ne
+treba jednostavno sabirati niti pripisivati pojedinom kliku. Po završetku ukloni
+varijablu ili je postavi na `false` i ponovo deployaj.
+
+Visok `firstByteMs` sam po sebi ne dokazuje spor upit: uporedi ga s vremenima
+upita, hladnim pokretanjem servera i geografskom udaljenošću. U Vercel i
+Supabase postavkama provjeri da su regija serverless funkcija i regija baze
+blizu jedna drugoj; ne mijenjaj regije bez provjere posljedica za deployment.
 
 ## Supabase konekcija
 
