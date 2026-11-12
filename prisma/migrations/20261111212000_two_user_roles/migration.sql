@@ -1,0 +1,18 @@
+ALTER TABLE "users" ALTER COLUMN "role" DROP DEFAULT;
+
+ALTER TYPE "Role" RENAME TO "Role_old";
+
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'VETERINARIAN');
+
+ALTER TABLE "users"
+ALTER COLUMN "role" TYPE "Role"
+USING (
+  CASE
+    WHEN "role"::text = 'ADMIN' THEN 'ADMIN'::"Role"
+    ELSE 'VETERINARIAN'::"Role"
+  END
+);
+
+ALTER TABLE "users" ALTER COLUMN "role" SET DEFAULT 'VETERINARIAN';
+
+DROP TYPE "Role_old";

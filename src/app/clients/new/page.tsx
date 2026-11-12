@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { requirePermission } from "@/lib/auth/require-permission";
+import { ClientForm } from "@/components/clients/client-form";
+
+export const metadata: Metadata = {
+  title: "Novi klijent",
+};
+
+export default async function NewClientPage() {
+  await requirePermission("clients:write");
+
+  return (
+    <main className="mx-auto w-full max-w-[1440px] px-[34px] pb-[42px] pt-[31px] max-[820px]:px-[21px] max-[640px]:px-[14px] max-[640px]:pb-[30px] max-[640px]:pt-[22px]">
+      <div className="mb-[25px] flex items-end justify-between gap-5 max-[640px]:flex-col max-[640px]:items-stretch">
+        <div>
+          <p className="mb-[7px] text-[11px] font-[750] uppercase tracking-[0.7px] text-green">Registar klijenata</p>
+          <h1 className="m-0 text-[clamp(24px,3vw,30px)] tracking-[-0.9px]">Novi klijent</h1>
+          <p className="mt-2 text-muted">Unesite kontakt podatke vlasnika.</p>
+        </div>
+        <Link className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[7px] border border-line bg-white px-[13px] text-sm font-bold text-[#53645a] hover:bg-[#f7faf8] sm:w-auto" href="/clients">Nazad na klijente</Link>
+      </div>
+      <ClientForm />
+    </main>
+  );
+}
