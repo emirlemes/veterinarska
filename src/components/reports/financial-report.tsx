@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ClickableRow } from "@/components/clickable-row";
 import { useQuery } from "@tanstack/react-query";
 import { QueryStatus } from "@/components/query-status";
 import { financialReportQuery, type FinancialRange } from "@/features/reports/financial-query";
@@ -85,13 +86,13 @@ export function FinancialReport({ range, invalidRange }: { range: FinancialRange
             <table className="w-full border-collapse text-left text-sm">
               <thead><tr>{["Datum", "Račun", "Klijent", "Način", "Iznos"].map((heading) => <th key={heading} className="whitespace-nowrap border-b border-line px-4 py-3 text-xs text-muted">{heading}</th>)}</tr></thead>
               <tbody>{data.paymentEntries.map((payment) => (
-                <tr key={payment.id} className="border-b border-line">
+                <ClickableRow key={payment.id} href={`/invoices/${payment.invoice.id}`} className="border-b border-line">
                   <td className="whitespace-nowrap px-4 py-3">{new Intl.DateTimeFormat("bs-BA", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Sarajevo" }).format(new Date(payment.paidAt))}</td>
                   <td className="px-4 py-3"><Link className="font-semibold text-green-dark hover:underline" href={`/invoices/${payment.invoice.id}`}>{payment.invoice.invoiceNumber}</Link></td>
                   <td className="px-4 py-3">{payment.invoice.client.companyName || `${payment.invoice.client.firstName} ${payment.invoice.client.lastName}`}</td>
                   <td className="px-4 py-3">{paymentMethodLabels[payment.method]}</td>
                   <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatCurrency(payment.amount)}</td>
-                </tr>
+                </ClickableRow>
               ))}</tbody>
             </table>
           </div>
@@ -132,13 +133,13 @@ export function FinancialReport({ range, invalidRange }: { range: FinancialRange
                   <th className="border-b border-line px-4 py-3 text-[10px] font-bold uppercase tracking-wide text-muted" key={heading}>{heading}</th>
                 ))}</tr></thead>
                 <tbody>{data.invoices.map((invoice) => (
-                  <tr className="border-b border-[#eef1ef] last:border-0" key={invoice.id}>
+                  <ClickableRow href={`/invoices/${invoice.id}`} className="border-b border-[#eef1ef] last:border-0" key={invoice.id}>
                     <td className="px-4 py-3 text-sm font-semibold"><Link className="text-green-dark hover:underline" href={`/invoices/${invoice.id}`}>{invoice.invoiceNumber}</Link></td>
                     <td className="px-4 py-3 text-sm">{invoice.client.companyName || `${invoice.client.firstName} ${invoice.client.lastName}`}</td>
                     <td className="px-4 py-3 text-sm">{invoice.issuedAt ? new Intl.DateTimeFormat("bs-BA", { dateStyle: "medium", timeZone: "Europe/Sarajevo" }).format(new Date(invoice.issuedAt)) : "—"}</td>
                     <td className="px-4 py-3 text-sm">{invoiceStatusLabels[invoice.status]}</td>
                     <td className="px-4 py-3 text-right text-sm font-semibold tabular-nums">{formatCurrency(invoice.total)}</td>
-                  </tr>
+                  </ClickableRow>
                 ))}</tbody>
               </table>
             </div>

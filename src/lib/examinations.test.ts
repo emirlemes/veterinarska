@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canCompleteExamination,
+  hasCompletionDiagnosis,
   examinationInputSchema,
+  examinationListQuerySchema,
   examinationServiceInputSchema,
   examinationUpdateSchema,
   therapyInputSchema,
@@ -77,6 +79,23 @@ test("accepts supported examination updates and rejects unsupported status chang
 test("only an in-progress examination can be completed", () => {
   assert.equal(canCompleteExamination("IN_PROGRESS"), true);
   assert.equal(canCompleteExamination("COMPLETED"), false);
+});
+
+test("completion requires a non-blank diagnosis", () => {
+  assert.equal(hasCompletionDiagnosis(null), false);
+  assert.equal(hasCompletionDiagnosis("  "), false);
+  assert.equal(hasCompletionDiagnosis("Dijagnoza"), true);
+});
+
+test("examination list validates date, pagination and veterinarian filters", () => {
+  const filters = examinationListQuerySchema.safeParse({
+    date: "2026-02-28", page: "2", veterinarianId: "33333333-3333-4333-8333-333333333333", sort: "oldest",
+  });
+  assert.equal(filters.success, true);
+  if (filters.success) assert.equal(filters.data.page, 2);
+  assert.equal(examinationListQuerySchema.safeParse({ date: "2026-02-30" }).success, false);
+  assert.equal(examinationListQuerySchema.safeParse({ page: "0" }).success, false);
+  assert.equal(examinationListQuerySchema.safeParse({ veterinarianId: "invalid" }).success, false);
 });
 
 test("therapy input requires a name and validates clinical field lengths", () => {

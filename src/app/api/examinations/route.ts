@@ -1,10 +1,10 @@
-import { AppointmentStatus, ExaminationStatus, Prisma, Role } from "@prisma/client";
+import { AppointmentStatus, Prisma, Role } from "@prisma/client";
 import { NextRequest } from "next/server";
 import {
-  canCompleteExamination,
   examinationInputSchema,
   examinationUpdateSchema,
 } from "@/features/examinations/validation";
+import { examinationConflictResponse, examinationUpdateResponse, updateExamination } from "@/features/examinations/update";
 import { authorizeApiRequest } from "@/lib/auth/authorize-api-request";
 import { prisma } from "@/lib/db";
 
@@ -213,120 +213,16 @@ export async function PATCH(request: NextRequest) {
   const input = parsed.data;
   try {
     const outcome = await prisma.$transaction(
-      async (transaction) => {
-        const examination = await transaction.examination.findUnique({
-          where: { id },
-          select: {
-            id: true,
-            status: true,
-            appointmentId: true,
-            clientId: true,
-            animalId: true,
-            veterinarianId: true,
-          },
-        });
-        if (!examination) return "missing" as const;
-        if (examination.status === ExaminationStatus.COMPLETED) return "completed" as const;
-        if (
-          examination.clientId !== input.clientId ||
-          examination.animalId !== input.animalId
-        ) {
-          return "identity-immutable" as const;
-        }
-
-        const nextStatus =
-          input.status === "COMPLETED" ? ExaminationStatus.COMPLETED : ExaminationStatus.IN_PROGRESS;
-        if (
-          nextStatus === ExaminationStatus.COMPLETED &&
-          !canCompleteExamination(examination.status)
-        ) {
-          return "completed" as const;
-        }
-
-        if (nextStatus === ExaminationStatus.COMPLETED && examination.appointmentId) {
-          const appointment = await transaction.appointment.findUnique({
-            where: { id: examination.appointmentId },
-            select: { status: true },
-          });
-          if (appointment?.status === AppointmentStatus.IN_PROGRESS) {
-            const completedAppointment = await transaction.appointment.updateMany({
-              where: {
-                id: examination.appointmentId,
-                status: AppointmentStatus.IN_PROGRESS,
-              },
-              data: { status: AppointmentStatus.COMPLETED },
-            });
-            if (completedAppointment.count !== 1) throw new Error("APPOINTMENT_STATUS_CONFLICT");
-          } else if (appointment && appointment.status !== AppointmentStatus.COMPLETED) {
-            return "appointment-conflict" as const;
-          }
-        }
-
-        const changed = await transaction.examination.updateMany({
-          where: { id, status: ExaminationStatus.IN_PROGRESS },
-          data: {
-            chiefComplaint: input.chiefComplaint || null,
-            symptoms: input.symptoms || null,
-            diagnosis: input.diagnosis || null,
-            treatmentPlan: input.treatmentPlan || null,
-            notes: input.notes || null,
-            status: nextStatus,
-          },
-        });
-        if (changed.count !== 1) throw new Error("EXAMINATION_STATUS_CONFLICT");
-
-        await transaction.auditLog.create({
-          data: {
-            userId: authorization.user.id,
-            action: nextStatus === ExaminationStatus.COMPLETED
-              ? "EXAMINATION_COMPLETED"
-              : "EXAMINATION_UPDATED",
-            entityType: "Examination",
-            entityId: id,
-            details: { veterinarianId: examination.veterinarianId },
-          },
-        });
-        return "completed-successfully" as const;
-      },
+      (transaction) => updateExamination(transaction, {
+        id,
+        userId: authorization.user.id,
+        status: input.status,
+        clinical: input,
+      }),
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
-
-    if (outcome === "missing") {
-      return Response.json({ error: "Pregled nije pronađen." }, { status: 404 });
-    }
-    if (outcome === "completed") {
-      return Response.json({ error: "Završen pregled više nije moguće mijenjati." }, { status: 409 });
-    }
-    if (outcome === "identity-immutable") {
-      return Response.json(
-        { error: "Klijent i životinja pregleda ne mogu se naknadno mijenjati." },
-        { status: 400 },
-      );
-    }
-    if (outcome === "appointment-conflict") {
-      return Response.json(
-        { error: "Termin ili pregled su u međuvremenu izmijenjeni." },
-        { status: 409 },
-      );
-    }
-    return Response.json({ success: true });
+    return examinationUpdateResponse(outcome);
   } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message === "APPOINTMENT_STATUS_CONFLICT" ||
-        error.message === "EXAMINATION_STATUS_CONFLICT")
-    ) {
-      return Response.json(
-        { error: "Termin ili pregled su u međuvremenu izmijenjeni." },
-        { status: 409 },
-      );
-    }
-    if (isPrismaError(error, "P2034")) {
-      return Response.json(
-        { error: "Podaci su upravo izmijenjeni. Osvježite stranicu i pokušajte ponovo." },
-        { status: 409 },
-      );
-    }
-    throw error;
+    return examinationConflictResponse(error);
   }
 }

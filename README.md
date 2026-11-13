@@ -224,7 +224,7 @@ blizu jedna drugoj; ne mijenjaj regije bez provjere posljedica za deployment.
 ```bash
 npm run dev          # razvojni server
 npm run lint         # ESLint
-npm test             # RBAC i lokalno vremensko testiranje
+npm test             # automatizirani testovi; test baze je opcionalan
 npm run build        # produkcijski build
 npm run db:generate  # generisanje Prisma klijenta
 npm run db:migrate   # razvojna migracija baze
@@ -233,6 +233,14 @@ npm run db:seed      # početni administrator i podešavanja ambulante
 npm run db:studio    # Prisma Studio
 docker compose down  # zaustavljanje lokalnog PostgreSQL-a
 ```
+
+Integracijski test završavanja pregleda pokreće se kada je `TEST_DATABASE_URL`
+postavljen na posebnu testnu bazu s primijenjenim migracijama. Test koristi
+isključivo sintetičke podatke u transakciji koja se vraća; bez te varijable
+test se preskače. Nikada ne koristite produkcijsku bazu za testiranje.
+
+Za nove akcije u tabelama koristite zajedničke stilove iz
+`src/components/table-action-styles.ts`; navigacija ostaje link, a radnje dugme.
 
 ## Uloge
 

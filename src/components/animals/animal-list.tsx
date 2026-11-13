@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { QueryStatus } from "@/components/query-status";
 import { animalListQuery, type AnimalFilters } from "@/features/animals/queries";
 import { QueryHttpError } from "@/lib/query-http";
+import { ClickableCard, ClickableRow } from "@/components/clickable-row";
 
 const statusLabels: Record<"ACTIVE" | "INACTIVE" | "DECEASED", string> = {
   ACTIVE: "Aktivna",
@@ -93,7 +94,7 @@ export function AnimalList({ filters, canWrite, invalidFilters }: {
           <>
           <div className="space-y-3 md:hidden">
             {animals.map((animal) => (
-              <article className="rounded-lg border border-[#eef1ef] p-3" key={animal.id}>
+              <ClickableCard href={`/animals/${animal.id}`} className="rounded-lg border border-[#eef1ef] p-3" key={animal.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <Link className="break-words text-sm font-bold text-green-dark hover:underline" href={`/animals/${animal.id}`}>
@@ -119,7 +120,7 @@ export function AnimalList({ filters, canWrite, invalidFilters }: {
                     {animal.sex ? <span>Spol: {animal.sex}</span> : null}
                   </div>
                 </div>
-              </article>
+              </ClickableCard>
             ))}
           </div>
           <div className="hidden overflow-x-auto md:block">
@@ -136,7 +137,7 @@ export function AnimalList({ filters, canWrite, invalidFilters }: {
               </thead>
               <tbody>
                 {animals.map((animal) => (
-                  <tr key={animal.id}>
+                  <ClickableRow key={animal.id} href={`/animals/${animal.id}`}>
                     <td className="whitespace-nowrap border-b border-[#eef1ef] px-[9px] py-3 text-xs last:border-0">
                       <Link className="font-[650] hover:text-green hover:underline" href={`/animals/${animal.id}`}>
                         {animal.name}
@@ -151,7 +152,7 @@ export function AnimalList({ filters, canWrite, invalidFilters }: {
                         {statusLabels[animal.status]}
                       </span>
                     </td>
-                  </tr>
+                  </ClickableRow>
                 ))}
               </tbody>
             </table>

@@ -5,6 +5,7 @@ import { hasPermission } from "@/lib/auth/permissions";
 import { invoiceListQuerySchema } from "@/features/invoices/validation";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { prisma } from "@/lib/db";
+import { ClickableRow } from "@/components/clickable-row";
 
 export const metadata: Metadata = { title: "Računi" };
 
@@ -135,7 +136,7 @@ export default async function InvoicesPage({ searchParams }: {
                 </thead>
                 <tbody>
                   {invoices.map((invoice) => (
-                    <tr className="hover:bg-[#f9fbf9]" key={invoice.id}>
+                    <ClickableRow href={`/invoices/${invoice.id}`} key={invoice.id}>
                       <td className="border-b border-[#eef1ef] px-4 py-3 text-sm font-semibold">
                         <Link className="text-green-dark hover:underline" href={`/invoices/${invoice.id}`}>{invoice.invoiceNumber}</Link>
                       </td>
@@ -148,7 +149,7 @@ export default async function InvoicesPage({ searchParams }: {
                       <td className="border-b border-[#eef1ef] px-4 py-3 text-sm">{statusLabels[invoice.status]}</td>
                       <td className="whitespace-nowrap border-b border-[#eef1ef] px-4 py-3 text-sm tabular-nums">{formatCurrency(invoice.total)}</td>
                       <td className="whitespace-nowrap border-b border-[#eef1ef] px-4 py-3 text-sm tabular-nums">{formatCurrency(remainingAmount(invoice))}</td>
-                    </tr>
+                    </ClickableRow>
                   ))}
                 </tbody>
               </table>

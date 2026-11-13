@@ -7,10 +7,20 @@
 
 - Kartice kontrolne table vode u odgovarajuće module s primijenjenim filterima i poštivanjem dozvola; broj lijekova s niskom zalihom više nije ograničen na prikazanih pet upozorenja.
 - Registar lijekova prikazuje tabelu s pretragom, filterima, sortiranjem, paginacijom i statistikom zaliha. Istekle serije nisu uključene u raspoloživu količinu.
+- Dodavanje lijeka, detalji serija, uređivanje, postojeći prijem nove serije i korekcija otvaraju se u odvojenim modalnim prozorima. Prozori upozoravaju na nesačuvane izmjene, ne zatvaraju se tokom čuvanja i prikazuju ishod operacije.
 - Dodani su kategorija, proizvođač i prodajna cijena, kao i uređivanje podataka lijeka. Migracija za ova polja primijenjena je na potvrđenu testnu bazu; status migracija i čitanje novih polja su provjereni. Primjena na produkciju nije potvrđena.
 - Finansijski izvještaj prikazuje uplate za odabrani period; filter računa podržava neplaćene i djelimično plaćene račune.
-- Prva faza još nije završena: potrebna je provjera kroz prijavljenu sesiju i dovršavanje traženih akcija nad lijekovima. Grupni prijem, samostalno izdavanje s FEFO raspodjelom i njihovo povezivanje s naplatom još nisu implementirani.
-- Posljednja automatizirana provjera: 54 testa, lint, Prisma validacija, produkcijski build i `git diff --check` uspješno prolaze. Ovo ne zamjenjuje provjeru poslovnih tokova i mobilnog prikaza na prijavljenoj sesiji.
+- Redizajn iz nove specifikacije još nije završen: postojeći prijem istovremeno kreira seriju i povećava zalihu; nezavisno kreiranje serije i prijem u postojeću seriju nisu implementirani. Potrebna je provjera kroz prijavljenu sesiju i dovršavanje ostalih radnji. Grupni prijem, samostalno izdavanje s FEFO raspodjelom, otpis i njihovo povezivanje s naplatom još nisu implementirani. Redizajn pregleda prema novoj specifikaciji također je otvoren.
+- Za buduće samostalno izdavanje korisnik je odredio da ambulanta ne izdaje lijekove s ograničenjima i da Admin ručno odobrava lijekove za izdavanje; neodobreni lijekovi moraju biti blokirani. Ovo pravilo još nije implementirano.
+- Posljednja automatizirana provjera: 54 testa, lint, Prisma validacija, produkcijski build i `git diff --check` uspješno prolaze. U izolovanom prikazu s testnim podacima i simuliranim odgovorima provjereni su prozori, odbacivanje izmjena, prijem, korekcija, uređivanje i obrada greške. Ovo ne zamjenjuje provjeru poslovnih tokova i mobilnog prikaza na prijavljenoj sesiji.
+
+## Interaktivne tabele i završavanje pregleda — u toku
+
+- Pregledi se prikazuju u tabeli s pretragom, filterima datuma, veterinara i statusa, sortiranjem po datumu i paginacijom. Radnje zavise od statusa i dozvola.
+- Pregled se može završiti iz detalja ili iz tabele uz potvrdu i ažuran sažetak. Dijagnoza je obavezna za završavanje; ista serverska provjera važi i za postojeći obrazac uređivanja.
+- Završavanje pregleda, povezanog termina i audit zapisa koristi zajedničku transakcijsku logiku, bez prepisivanja kliničkih podataka pri direktnom završavanju.
+- Redovi pregleda, desktop lista klijenata, životinja, računa, zaliha i finansijskog izvještaja te mobilne kartice klijenata i životinja podržavaju otvaranje detalja klikom i tastaturom; ugrađene radnje ostaju nezavisne. Ostale tabele i mobilne kartice nisu još sve prilagođene.
+- Transakcijski test završavanja prošao je na testnoj bazi sa sintetičkim podacima i obaveznim rollbackom; zasebno je provjereno ponašanje prozora i redova u izolovanom pregledniku sa simuliranim API-jem. Cjelovito testiranje prijavljene aplikacije, svih tabela i mobilnih širina ostaje otvoreno.
 
 ## Sažetak dosadašnjeg rada
 

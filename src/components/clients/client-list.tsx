@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { clientListQuery, ClientListError, type ClientFilters } from "@/features/clients/queries";
 import { QueryStatus } from "@/components/query-status";
+import { ClickableCard, ClickableRow } from "@/components/clickable-row";
 
 export function ClientList({ filters, canWrite, invalidFilters }: {
   filters: ClientFilters;
@@ -77,7 +78,7 @@ export function ClientList({ filters, canWrite, invalidFilters }: {
           <>
           <div className="space-y-3 md:hidden">
             {clients.map((client) => (
-              <article className="rounded-lg border border-[#eef1ef] p-3" key={client.id}>
+              <ClickableCard href={`/clients/${client.id}`} className="rounded-lg border border-[#eef1ef] p-3" key={client.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <Link className="break-words text-sm font-bold text-green-dark hover:underline" href={`/clients/${client.id}`}>
@@ -103,7 +104,7 @@ export function ClientList({ filters, canWrite, invalidFilters }: {
                     <span>{client._count.animals} životinja</span>
                   </div>
                 </div>
-              </article>
+              </ClickableCard>
             ))}
           </div>
           <div className="hidden overflow-x-auto md:block">
@@ -120,7 +121,7 @@ export function ClientList({ filters, canWrite, invalidFilters }: {
               </thead>
               <tbody>
                 {clients.map((client) => (
-                  <tr key={client.id}>
+                  <ClickableRow key={client.id} href={`/clients/${client.id}`}>
                     <td className="whitespace-nowrap border-b border-[#eef1ef] px-[9px] py-3 text-xs last:border-0">
                       <Link className="font-[650] hover:text-green hover:underline" href={`/clients/${client.id}`}>
                         {client.companyName || `${client.firstName} ${client.lastName}`}
@@ -140,7 +141,7 @@ export function ClientList({ filters, canWrite, invalidFilters }: {
                         {client.isActive ? "Aktivan" : "Arhiviran"}
                       </span>
                     </td>
-                  </tr>
+                  </ClickableRow>
                 ))}
               </tbody>
             </table>

@@ -8,7 +8,7 @@ import { requirePermission } from "@/lib/auth/require-permission";
 import { getClinicDate } from "@/lib/dates";
 import { prisma } from "@/lib/db";
 
-export const metadata: Metadata = { title: "Lijekovi i zalihe" };
+export const metadata: Metadata = { title: "Zaliha lijekova" };
 
 export default async function InventoryPage({ searchParams }: {
   searchParams: Promise<{ status?: string }>;
@@ -76,7 +76,7 @@ export default async function InventoryPage({ searchParams }: {
       <div className="mb-5 flex flex-col gap-4 sm:mb-[25px] sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-[7px] text-[11px] font-[750] uppercase tracking-[0.7px] text-green">Ambulantna apoteka</p>
-          <h1 className="m-0 text-[clamp(24px,3vw,30px)] tracking-[-0.9px]">Lijekovi</h1>
+          <h1 className="m-0 text-[clamp(24px,3vw,30px)] tracking-[-0.9px]">Zaliha lijekova</h1>
           <p className="mt-2 text-sm text-muted">
             Upravljanje lijekovima i zalihama veterinarske stanice
           </p>

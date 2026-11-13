@@ -5,6 +5,7 @@ import { Prisma } from "@prisma/client";
 import { TherapyPanel } from "@/components/examinations/therapy-panel";
 import { ExaminationServicePanel } from "@/components/examinations/service-panel";
 import { MedicationAdministrationPanel } from "@/components/examinations/medication-administration-panel";
+import { CompleteExaminationButton } from "@/components/examinations/complete-examination";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { hasPermission } from "@/lib/auth/permissions";
@@ -122,12 +123,15 @@ export default async function ExaminationDetailsPage({
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           {canWrite && examination.status === "IN_PROGRESS" ? (
-            <Link
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-green px-4 text-sm font-bold text-white hover:bg-green-dark sm:w-auto"
-              href={`/examinations/${examination.id}/edit`}
-            >
-              Uredi pregled
-            </Link>
+            <>
+              <Link
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-line bg-white px-4 text-sm font-bold text-[#53645a] hover:bg-[#f7faf8] sm:w-auto"
+                href={`/examinations/${examination.id}/edit`}
+              >
+                Uredi pregled
+              </Link>
+              <CompleteExaminationButton id={examination.id} canReadAnimals={hasPermission(user.role, "animals:read")} canWriteInvoices={canWriteInvoices} canReadInvoices={canReadInvoices} />
+            </>
           ) : null}
           {canWriteInvoices && examination.status === "COMPLETED" && !examination.invoice ? (
             <Link

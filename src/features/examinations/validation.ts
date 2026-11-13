@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { getClinicDateBounds } from "@/lib/dates";
 
 const optionalMedicalText = z.string().trim().max(10000).optional().or(z.literal(""));
 
@@ -22,6 +23,10 @@ export const examinationUpdateSchema = examinationInputSchema.extend({
 export const examinationListQuerySchema = z.object({
   status: z.enum(["all", "IN_PROGRESS", "COMPLETED"]).default("all"),
   q: z.string().trim().max(100).default(""),
+  date: z.string().refine((value) => !value || Boolean(getClinicDateBounds(value)), "Neispravan datum.").default(""),
+  veterinarianId: z.union([z.literal(""), z.string().uuid()]).default(""),
+  sort: z.enum(["newest", "oldest"]).default("newest"),
+  page: z.coerce.number().int().min(1).max(100000).default(1),
 });
 
 export const examinationStatusSchema = z.object({
@@ -59,4 +64,8 @@ export const examinationServiceInputSchema = z.object({
 
 export function canCompleteExamination(current: "IN_PROGRESS" | "COMPLETED") {
   return current === "IN_PROGRESS";
+}
+
+export function hasCompletionDiagnosis(diagnosis: string | null | undefined) {
+  return Boolean(diagnosis?.trim());
 }
