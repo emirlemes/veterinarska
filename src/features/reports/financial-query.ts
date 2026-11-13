@@ -21,6 +21,17 @@ const financialReportSchema = z.object({
   })),
   collected: money,
   paymentCount: z.number().int().nonnegative(),
+  paymentEntries: z.array(z.object({
+    id: z.string(),
+    paidAt: z.string().datetime(),
+    amount: money,
+    method: z.enum(["CASH", "CARD", "BANK_TRANSFER", "OTHER"]),
+    invoice: z.object({
+      id: z.string(),
+      invoiceNumber: z.string(),
+      client: z.object({ firstName: z.string(), lastName: z.string(), companyName: z.string().nullable() }),
+    }),
+  })),
   issuedTotal: money,
   invoiceCount: z.number().int().nonnegative(),
   outstanding: money,

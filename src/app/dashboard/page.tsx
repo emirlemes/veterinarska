@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { InvoiceStatus, Prisma } from "@prisma/client";
 import { hasPermission } from "@/lib/auth/permissions";
 import { requirePermission } from "@/lib/auth/require-permission";
@@ -69,8 +70,14 @@ export default async function DashboardPage() {
     hasPermission(user.role, "medications:read") ||
     hasPermission(user.role, "inventory:write");
   const canViewExaminations = hasPermission(user.role, "examinations:read");
+  const canViewAppointments = hasPermission(user.role, "appointments:read");
+  const canViewClients = hasPermission(user.role, "clients:read");
+  const canViewAnimals = hasPermission(user.role, "animals:read");
+  const canViewInvoices = hasPermission(user.role, "invoices:read");
+  const canViewFinancialReports = hasPermission(user.role, "reports:financial");
   const { start, end } = getClinicDayBounds();
-  const clinicDate = new Date(`${getClinicDate()}T00:00:00.000Z`);
+  const today = getClinicDate();
+  const clinicDate = new Date(`${today}T00:00:00.000Z`);
 
   const [
     appointments,
@@ -193,7 +200,7 @@ export default async function DashboardPage() {
       )
     : new Prisma.Decimal(0);
 
-  const lowStock = stock
+  const allLowStock = stock
     .map((medication) => ({
       ...medication,
       quantity: medication.batches.reduce(
@@ -201,8 +208,8 @@ export default async function DashboardPage() {
         new Prisma.Decimal(0),
       ),
     }))
-    .filter((medication) => medication.quantity.lte(medication.minimumStock))
-    .slice(0, 5);
+    .filter((medication) => medication.quantity.lte(medication.minimumStock));
+  const lowStock = allLowStock.slice(0, 5);
 
   return (
     <main className="mx-auto w-full max-w-[1440px] px-[34px] pb-[42px] pt-[31px] max-[820px]:px-[21px] max-[640px]:px-[14px] max-[640px]:pb-[30px] max-[640px]:pt-[22px]">
@@ -218,28 +225,30 @@ export default async function DashboardPage() {
       </div>
 
       <section className="mb-[18px] grid grid-cols-4 gap-[14px] max-[1100px]:grid-cols-2 max-[640px]:gap-2.5" aria-label="Dnevni pokazatelji">
-        <StatCard label="Današnji termini" value={todayAppointmentCount} note="aktivni termini" />
+        {canViewAppointments ? <StatCard label="Današnji termini" value={todayAppointmentCount} note="aktivni termini" href={`/appointments?date=${today}`} /> : null}
         {canViewExaminations ? (
-          <StatCard label="Završeni pregledi" value={completedExaminations} note="danas" />
+          <StatCard label="Završeni pregledi" value={completedExaminations} note="danas" href="/examinations?status=COMPLETED" />
         ) : null}
-        <StatCard label="Registrovani klijenti" value={clientCount} note="aktivni klijenti" />
-        <StatCard label="Registrovane životinje" value={animalCount} note="aktivne životinje" />
+        {canViewClients ? <StatCard label="Registrovani klijenti" value={clientCount} note="aktivni klijenti" href="/clients?status=active" /> : null}
+        {canViewAnimals ? <StatCard label="Registrovane životinje" value={animalCount} note="aktivne životinje" href="/animals?status=active" /> : null}
         {canViewFinancial ? (
           <>
             <StatCard
               label="Današnja naplata"
               value={formatCurrency(paymentsTotal)}
               note="evidentirane uplate"
+              href={canViewFinancialReports ? `/reports/financial?from=${today}&to=${today}` : undefined}
             />
             <StatCard
               label="Nenaplaćeno"
               value={formatCurrency(outstandingTotal)}
               note={`${outstandingInvoices.length} otvorenih računa`}
+              href={canViewInvoices ? "/invoices?status=unpaid" : undefined}
             />
           </>
         ) : null}
         {canViewInventory ? (
-          <StatCard label="Niske zalihe" value={lowStock.length} note="lijekovi ispod minimuma" />
+          <StatCard label="Niske zalihe" value={allLowStock.length} note="lijekovi na minimumu ili ispod njega" href={hasPermission(user.role, "medications:read") ? "/inventory?status=low" : undefined} />
         ) : null}
       </section>
 
@@ -404,16 +413,24 @@ function StatCard({
   label,
   value,
   note,
+  href,
 }: {
   label: string;
   value: string | number;
   note: string;
+  href?: string;
 }) {
-  return (
-    <article className="min-h-[120px] rounded-[11px] border border-line bg-white p-[17px_18px] shadow-[0_2px_6px_rgb(34_62_47_/_2%)] max-[640px]:min-h-[106px] max-[640px]:p-[14px]">
+  const content = (
+    <>
       <div className="text-xs font-[550] text-muted">{label}</div>
       <div className="mt-[17px] text-[26px] font-[750] tracking-[-0.8px] max-[640px]:mt-[14px] max-[640px]:text-[22px]">{value}</div>
       <div className="mt-1 text-[11px] text-[#96a19b]">{note}</div>
-    </article>
+    </>
   );
+  const classes = "block min-h-[120px] rounded-[11px] border border-line bg-white p-[17px_18px] shadow-[0_2px_6px_rgb(34_62_47_/_2%)] max-[640px]:min-h-[106px] max-[640px]:p-[14px]";
+  return href ? (
+    <Link href={href} className={`${classes} cursor-pointer transition hover:border-green/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green`}>
+      {content}
+    </Link>
+  ) : <article className={classes}>{content}</article>;
 }

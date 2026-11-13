@@ -8,11 +8,16 @@ const positiveQuantity = z
   .regex(/^\d{1,9}(?:\.\d{1,3})?$/, "Unesite količinu s najviše tri decimale.")
   .refine((value) => Number(value) > 0, "Količina mora biti veća od nule.");
 
+export const inventoryListStatusSchema = z.enum(["all", "in-stock", "low", "out", "expiring"]);
+
 export const medicationInputSchema = z.object({
   name: z.string().trim().min(1, "Unesite naziv lijeka.").max(180),
   activeIngredient: z.string().trim().max(180).optional().or(z.literal("")),
   form: z.string().trim().max(100).optional().or(z.literal("")),
   strength: z.string().trim().max(100).optional().or(z.literal("")),
+  category: z.string().trim().max(100).optional().or(z.literal("")),
+  manufacturer: z.string().trim().max(180).optional().or(z.literal("")),
+  sellingPrice: z.string().trim().regex(/^\d{1,9}(?:\.\d{1,2})?$/, "Unesite ispravnu cijenu.").optional().or(z.literal("")),
   unit: z.string().trim().min(1, "Unesite jedinicu mjere.").max(40),
   minimumStock: z.string().trim().regex(/^\d{1,9}(?:\.\d{1,3})?$/).default("0"),
 });

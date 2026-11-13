@@ -38,7 +38,7 @@ test("financial query separates periods and rejects malformed or unauthorized re
     requests.push(String(input));
     assert.equal(init?.cache, "no-store");
     return Response.json({
-      invoices: [], collected: "12.34", paymentCount: 1, issuedTotal: "20",
+      invoices: [], paymentEntries: [], collected: "12.34", paymentCount: 1, issuedTotal: "20",
       invoiceCount: 1, outstanding: "7.66", overdueCount: 0,
     });
   };
@@ -50,7 +50,7 @@ test("financial query separates periods and rejects malformed or unauthorized re
     assert.ok(requests[0].includes("from=2026-11-01"));
     assert.notDeepEqual(financialReportKeys.range(range), financialReportKeys.range({ ...range, to: "2026-11-13" }));
     globalThis.fetch = async () => Response.json({
-      invoices: [], collected: "not money", paymentCount: 1, issuedTotal: "20",
+      invoices: [], paymentEntries: [], collected: "not money", paymentCount: 1, issuedTotal: "20",
       invoiceCount: 1, outstanding: "7.66", overdueCount: 0,
     });
     await assert.rejects(client.fetchQuery(financialReportQuery(range)), /neispravan finansijski izvještaj/);

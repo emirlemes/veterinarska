@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { InvoiceStatus, Prisma } from "@prisma/client";
 import { hasPermission } from "@/lib/auth/permissions";
+import { invoiceListQuerySchema } from "@/features/invoices/validation";
 import { requirePermission } from "@/lib/auth/require-permission";
 import { prisma } from "@/lib/db";
 
@@ -40,16 +41,26 @@ function remainingAmount(invoice: {
   return remaining.greaterThan(0) ? remaining : new Prisma.Decimal(0);
 }
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({ searchParams }: {
+  searchParams: Promise<{ status?: string }>;
+}) {
   const user = await requirePermission("invoices:read");
-  const invoices = await prisma.invoice.findMany({
+  const parsed = invoiceListQuerySchema.safeParse(await searchParams);
+  const status = parsed.success ? parsed.data.status : "all";
+  const foundInvoices = await prisma.invoice.findMany({
+    where: status === "unpaid"
+      ? { status: { in: [InvoiceStatus.ISSUED, InvoiceStatus.PARTIALLY_PAID] } }
+      : undefined,
     include: {
       client: { select: { id: true, firstName: true, lastName: true, companyName: true } },
       payments: { include: { reversals: { select: { amount: true } } } },
     },
     orderBy: [{ issuedAt: "desc" }, { createdAt: "desc" }],
-    take: 100,
+    take: status === "all" ? 100 : undefined,
   });
+  const invoices = status === "unpaid"
+    ? foundInvoices.filter((invoice) => remainingAmount(invoice).greaterThan(0)).slice(0, 100)
+    : foundInvoices;
   const canWrite = hasPermission(user.role, "invoices:write");
 
   return (
@@ -77,6 +88,12 @@ export default async function InvoicesPage() {
           </Link>
         ) : null}
       </div>
+
+      <nav className="mb-4 flex flex-wrap gap-2" aria-label="Filter računa">
+        <Link className={`rounded-lg border px-4 py-3 text-sm font-semibold ${status === "all" ? "border-green bg-green-soft text-green-dark" : "border-line bg-white text-muted"}`} href="/invoices" aria-current={status === "all" ? "page" : undefined}>Svi računi</Link>
+        <Link className={`rounded-lg border px-4 py-3 text-sm font-semibold ${status === "unpaid" ? "border-green bg-green-soft text-green-dark" : "border-line bg-white text-muted"}`} href="/invoices?status=unpaid" aria-current={status === "unpaid" ? "page" : undefined}>Nenaplaćeni računi</Link>
+      </nav>
+      {!parsed.success ? <p role="alert" className="mb-4 rounded-lg bg-[#fbefee] p-3 text-sm text-[#a43e3c]">Neispravan filter računa. Prikazani su svi računi.</p> : null}
 
       <section className="overflow-hidden rounded-xl border border-line bg-white shadow-[0_2px_6px_rgb(34_62_47_/_2%)]">
         {invoices.length ? (
@@ -139,8 +156,8 @@ export default async function InvoicesPage() {
           </>
         ) : (
           <div className="px-4 py-12 text-center">
-            <p className="mb-1 text-sm font-semibold">Još nema izdatih računa.</p>
-            <p className="m-0 text-sm text-muted">Račun možete izdati iz profila klijenta ili ovdje.</p>
+            <p className="mb-1 text-sm font-semibold">{status === "unpaid" ? "Nema nenaplaćenih računa." : "Još nema izdatih računa."}</p>
+            {status === "all" ? <p className="m-0 text-sm text-muted">Račun možete izdati iz profila klijenta ili ovdje.</p> : null}
           </div>
         )}
       </section>

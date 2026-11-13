@@ -13,6 +13,7 @@ const invoiceStatusLabels: Record<"DRAFT" | "ISSUED" | "PARTIALLY_PAID" | "PAID"
   PAID: "Plaćeno",
   VOID: "Stornirano",
 };
+const paymentMethodLabels = { CASH: "Gotovina", CARD: "Kartica", BANK_TRANSFER: "Bankovni transfer", OTHER: "Ostalo" } as const;
 
 function formatCurrency(value: string) {
   return new Intl.NumberFormat("bs-BA", {
@@ -72,6 +73,29 @@ export function FinancialReport({ range, invalidRange }: { range: FinancialRange
         <SummaryCard title="Izdato u periodu" value={formatCurrency(data.issuedTotal)} detail={`${data.invoiceCount} računa`} />
         <SummaryCard title="Otvorena potraživanja" value={formatCurrency(data.outstanding)} detail="Izdati i djelimično plaćeni računi" />
         <SummaryCard title="Računi s isteklim rokom" value={String(data.overdueCount)} detail="Broj dospjelih računa" />
+      </section>
+
+      <section className="mt-4 overflow-hidden rounded-xl border border-line bg-white shadow-[0_2px_6px_rgb(34_62_47_/_2%)]">
+        <div className="border-b border-line px-4 py-4">
+          <h2 className="m-0 text-base font-bold">Uplate u odabranom periodu</h2>
+          <p className="mb-0 mt-1 text-xs text-muted">Prikazani su izvorni iznosi uplata; zbir naplate uključuje storna evidentirana u periodu.{data.paymentCount > data.paymentEntries.length ? " Prikazano je najviše 500 uplata." : ""}</p>
+        </div>
+        {data.paymentEntries.length ? (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead><tr>{["Datum", "Račun", "Klijent", "Način", "Iznos"].map((heading) => <th key={heading} className="whitespace-nowrap border-b border-line px-4 py-3 text-xs text-muted">{heading}</th>)}</tr></thead>
+              <tbody>{data.paymentEntries.map((payment) => (
+                <tr key={payment.id} className="border-b border-line">
+                  <td className="whitespace-nowrap px-4 py-3">{new Intl.DateTimeFormat("bs-BA", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Sarajevo" }).format(new Date(payment.paidAt))}</td>
+                  <td className="px-4 py-3"><Link className="font-semibold text-green-dark hover:underline" href={`/invoices/${payment.invoice.id}`}>{payment.invoice.invoiceNumber}</Link></td>
+                  <td className="px-4 py-3">{payment.invoice.client.companyName || `${payment.invoice.client.firstName} ${payment.invoice.client.lastName}`}</td>
+                  <td className="px-4 py-3">{paymentMethodLabels[payment.method]}</td>
+                  <td className="whitespace-nowrap px-4 py-3 tabular-nums">{formatCurrency(payment.amount)}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        ) : <p className="m-0 px-4 py-8 text-center text-sm text-muted">U ovom periodu nema evidentiranih uplata.</p>}
       </section>
 
       <section className="mt-4 overflow-hidden rounded-xl border border-line bg-white shadow-[0_2px_6px_rgb(34_62_47_/_2%)]">

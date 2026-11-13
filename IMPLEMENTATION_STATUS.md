@@ -1,7 +1,16 @@
 # Status implementacije — Veterinary Management System
 
 **Datum pregleda:** 11.11.2026.  
-**Status projekta:** Glavni operativni moduli su implementirani. Prisma migracije su primijenjene na trenutno konfigurisanu Supabase bazu; aplikacija prolazi ciljane testove, lint, Prisma validaciju i produkcijski build. PWA instalacija i mobilne akcije pregleda su implementirane; offline rad namjerno nije omogućen, a integracijsko testiranje poslovnih tokova ostaje otvoreno.
+**Status projekta:** Glavni operativni moduli su implementirani. Migracije su primijenjene na konfigurisanu testnu bazu; aplikacija prolazi testove, lint, Prisma validaciju i produkcijski build. PWA instalacija i mobilne akcije pregleda su implementirane; offline rad namjerno nije omogućen, a integracijsko testiranje poslovnih tokova ostaje otvoreno.
+
+## Poboljšanja kontrolne table i zaliha — u toku
+
+- Kartice kontrolne table vode u odgovarajuće module s primijenjenim filterima i poštivanjem dozvola; broj lijekova s niskom zalihom više nije ograničen na prikazanih pet upozorenja.
+- Registar lijekova prikazuje tabelu s pretragom, filterima, sortiranjem, paginacijom i statistikom zaliha. Istekle serije nisu uključene u raspoloživu količinu.
+- Dodani su kategorija, proizvođač i prodajna cijena, kao i uređivanje podataka lijeka. Migracija za ova polja primijenjena je na potvrđenu testnu bazu; status migracija i čitanje novih polja su provjereni. Primjena na produkciju nije potvrđena.
+- Finansijski izvještaj prikazuje uplate za odabrani period; filter računa podržava neplaćene i djelimično plaćene račune.
+- Prva faza još nije završena: potrebna je provjera kroz prijavljenu sesiju i dovršavanje traženih akcija nad lijekovima. Grupni prijem, samostalno izdavanje s FEFO raspodjelom i njihovo povezivanje s naplatom još nisu implementirani.
+- Posljednja automatizirana provjera: 54 testa, lint, Prisma validacija, produkcijski build i `git diff --check` uspješno prolaze. Ovo ne zamjenjuje provjeru poslovnih tokova i mobilnog prikaza na prijavljenoj sesiji.
 
 ## Sažetak dosadašnjeg rada
 

@@ -5,6 +5,10 @@ const money = z
   .trim()
   .regex(/^\d{1,9}(?:\.\d{1,2})?$/, "Unesite iznos s najviše dvije decimale.");
 
+export const invoiceListQuerySchema = z.object({
+  status: z.enum(["all", "unpaid"]).default("all"),
+});
+
 export const invoiceInputSchema = z.object({
   clientId: z.string().uuid(),
   examinationId: z.string().uuid().optional().or(z.literal("")),

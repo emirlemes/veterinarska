@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "Odabrani period nije ispravan." }, { status: 400 });
   }
 
-  const [invoices, invoiceTotals, payments, reversals, outstandingInvoices] = await Promise.all([
+  const [invoices, invoiceTotals, payments, reversals, outstandingInvoices, paymentEntries] = await Promise.all([
     prisma.invoice.findMany({
       where: { issuedAt: { gte: from.start, lt: to.end } },
       select: {
@@ -67,6 +67,15 @@ export async function GET(request: NextRequest) {
         },
       },
     }),
+    prisma.payment.findMany({
+      where: { paidAt: { gte: from.start, lt: to.end } },
+      select: {
+        id: true, paidAt: true, amount: true, method: true,
+        invoice: { select: { id: true, invoiceNumber: true, client: { select: { firstName: true, lastName: true, companyName: true } } } },
+      },
+      orderBy: [{ paidAt: "desc" }, { id: "desc" }],
+      take: 500,
+    }),
   ]);
   const totals = calculateFinancialTotals({
     paymentTotal: payments._sum.amount,
@@ -83,6 +92,11 @@ export async function GET(request: NextRequest) {
       issuedAt: invoice.issuedAt?.toISOString() ?? null,
     })),
     ...totals,
+    paymentEntries: paymentEntries.map((payment) => ({
+      ...payment,
+      paidAt: payment.paidAt.toISOString(),
+      amount: payment.amount.toString(),
+    })),
     paymentCount: payments._count._all,
     invoiceCount: invoiceTotals._count._all,
   }, { headers: { "Cache-Control": "private, no-store" } });
